@@ -1,0 +1,11 @@
+{
+  "codeowners": ["@mystster"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/mystster/hacc-tapo-p105",
+  "domain": "tapo_p105",
+  "iot_class": "local_polling",
+  "name": "Tapo for P105",
+  "requirements": [],
+  "version": "1.0.0"
+}
