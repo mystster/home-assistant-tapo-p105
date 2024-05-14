@@ -42,7 +42,8 @@ async def async_setup_entry(
         tapocli_path=Path(hass.config.config_dir)
         / "custom_components"
         / DOMAIN
-        / "bin",
+        / "bin"
+        / "tapo2",
         ip=config[CONF_IP_ADDRESS],
         username=config[CONF_USERNAME],
         password=config[CONF_PASSWORD],

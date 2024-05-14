@@ -1,0 +1,25 @@
+{
+  "title": "tapo for p105",
+  "config": {
+    "step": {
+      "user": {
+        "title": "add p105 device",
+        "data": {
+          "ip_address": "IP address",
+          "username": "User name",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "connect_error": "Cannot connect to the device",
+      "ip_error": "IP address is not correct",
+      "response_error": "decode error from json which response from the device",
+      "auth_error": "authentication error",
+      "unknown_error": "unknown error occurred"
+    },
+    "abort": {
+      "already_configured": "the device already configured"
+    }
+  }
+}
