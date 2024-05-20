@@ -5,8 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import timedelta
 import logging
-from pathlib import Path
-import subprocess
 
 import voluptuous as vol
 
@@ -14,9 +12,11 @@ from homeassistant import config_entries, core
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PASSWORD, CONF_USERNAME
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN
+from .const import DEVICE_NAME, DOMAIN, MODEL, SW_VERSION, UNIQUE_ID
+from .tapocli import TapoCli
 
 _LOGGER = logging.getLogger(__name__)
 # Time between updating data from GitHub
@@ -39,11 +39,7 @@ async def async_setup_entry(
     """Set up sensors from a config entry created in the integrations UI."""
     config = hass.data[DOMAIN][config_entry.entry_id]
     sensor = TapoP105Sensor(
-        tapocli_path=Path(hass.config.config_dir)
-        / "custom_components"
-        / DOMAIN
-        / "bin"
-        / "tapo2",
+        config_path=hass.config.config_dir,
         ip=config[CONF_IP_ADDRESS],
         username=config[CONF_USERNAME],
         password=config[CONF_PASSWORD],
@@ -70,17 +66,17 @@ async def async_setup_entry(
 class TapoP105Sensor(Entity):
     """Representation of a Tapo P105 sensor."""
 
-    def __init__(
-        self, tapocli_path: str, ip: str, username: str, password: str
-    ) -> None:
+    def __init__(self, config_path: str, ip: str, username: str, password: str) -> None:
         """Init for the tapo P105 sensor."""
         super().__init__()
-        self.tapocli = tapocli_path
-        self.ip = ip
-        self.username = username
-        self.password = password
+        self._config_path = config_path
+        self._ip = ip
+        self._username = username
+        self._password = password
+        self._cli = TapoCli(self._config_path, self._ip, self._username, self._password)
+        self._json = self._cli.info()
         self._state = None
-        self._id = None
+        self._id = self._json[UNIQUE_ID]
         self.available = True
         self.has_entity_name = True
 
@@ -94,9 +90,17 @@ class TapoP105Sensor(Entity):
         """Return status of the sensor."""
         return self._state
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.unique_id)},
+            name=self._json[DEVICE_NAME],
+            sw_version=self._json[SW_VERSION],
+            model=self._json[MODEL],
+            manufacturer="TAPO",
+        )
+
     async def async_update(self):
         """Update the sensor information."""
-        res = subprocess.run(
-            args="pwd", shell=True, capture_output=True, text=True, check=False
-        )
-        _LOGGER.log(level=logging.INFO, msg=res.stdout)
+        self._json = self._cli.info()
