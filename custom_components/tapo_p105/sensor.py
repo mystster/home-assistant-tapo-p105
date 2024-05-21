@@ -14,8 +14,10 @@ from homeassistant.const import CONF_IP_ADDRESS, CONF_PASSWORD, CONF_USERNAME
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DEVICE_NAME, DOMAIN, MODEL, SW_VERSION, UNIQUE_ID
+from .coordinator import P105Coordinator
 from .tapocli import TapoCli
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,69 +40,40 @@ async def async_setup_entry(
 ):
     """Set up sensors from a config entry created in the integrations UI."""
     config = hass.data[DOMAIN][config_entry.entry_id]
-    sensor = TapoP105Sensor(
-        config_path=hass.config.config_dir,
-        ip=config[CONF_IP_ADDRESS],
-        username=config[CONF_USERNAME],
-        password=config[CONF_PASSWORD],
+    cli = TapoCli(
+        hass.config.config_dir,
+        config[CONF_IP_ADDRESS],
+        config[CONF_USERNAME],
+        config[CONF_PASSWORD],
     )
+    coordinator = P105Coordinator(hass, cli)
+    await coordinator.async_config_entry_first_refresh()
+
+    sensor = TapoP105Sensor(coordinator)
     async_add_entities([sensor], update_before_add=True)
 
 
-# async def async_setup_platform(
-#     hass: HomeAssistant,
-#     config: ConfigType,
-#     async_add_entities: Callable,
-#     discovery_info: DiscoveryInfoType | None = None,
-# ) -> None:
-#     """Set up the sensor platform."""
-#     # session = async_get_clientsession(hass)
-#     # github = GitHubAPI(session, "requester", oauth_token=config[CONF_ACCESS_TOKEN])
-#     # sensor = [GitHubRepoSensor(github, repo["path"]) for repo in config[CONF_REPOS]]
-#     sensor = TapoP105Sensor(
-#         config[CONF_IP_ADDRESS], config[CONF_USERNAME], config[CONF_PASSWORD]
-#     )
-#     async_add_entities(sensor, update_before_add=True)
-
-
-class TapoP105Sensor(Entity):
+class TapoP105Sensor(CoordinatorEntity, Entity):
     """Representation of a Tapo P105 sensor."""
 
-    def __init__(self, config_path: str, ip: str, username: str, password: str) -> None:
+    def __init__(self, coordinator: P105Coordinator) -> None:
         """Init for the tapo P105 sensor."""
-        super().__init__()
-        self._config_path = config_path
-        self._ip = ip
-        self._username = username
-        self._password = password
-        self._cli = TapoCli(self._config_path, self._ip, self._username, self._password)
-        self._json = self._cli.info()
-        self._state = None
-        self._id = self._json[UNIQUE_ID]
-        self.available = True
+        super().__init__(coordinator)
         self.has_entity_name = True
+        self._attr_name = self._sensor_config.name.strip().title()
 
     @property
     def unique_id(self) -> str | None:
         """Return the unique id of the sensor."""
-        return self._id
-
-    @property
-    def state(self) -> str | None:
-        """Return status of the sensor."""
-        return self._state
+        return self.coordinator.data[UNIQUE_ID]
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
         return DeviceInfo(
-            identifiers={(DOMAIN, self.unique_id)},
-            name=self._json[DEVICE_NAME],
-            sw_version=self._json[SW_VERSION],
-            model=self._json[MODEL],
+            identifiers={(DOMAIN, self.coordinator.data[UNIQUE_ID])},
+            name=self.coordinator.data[DEVICE_NAME],
+            sw_version=self.coordinator.data[SW_VERSION],
+            model=self.coordinator.data[MODEL],
             manufacturer="TAPO",
         )
-
-    async def async_update(self):
-        """Update the sensor information."""
-        self._json = self._cli.info()
