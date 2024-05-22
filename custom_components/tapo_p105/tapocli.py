@@ -49,7 +49,6 @@ class TapoCli:
     def info(self) -> any:
         """Get device info."""
         res = self._exec_tapocli("info")
-        _LOGGER.info(msg=res)
         try:
             j = json.loads(res)
         except json.JSONDecodeError as j:
