@@ -6,14 +6,28 @@ from collections.abc import Callable
 import logging
 
 from homeassistant import config_entries, core
+
+# from homeassistant.helpers.entity import Entity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEVICE_NAME, DOMAIN, HW_VERSION, MAC, MODEL, SW_VERSION, UNIQUE_ID
+from .const import (
+    DEVICE_NAME,
+    DEVICE_ON,
+    DOMAIN,
+    HW_VERSION,
+    MAC,
+    MODEL,
+    SW_VERSION,
+    UNIQUE_ID,
+)
 from .coordinator import P105Coordinator
 from .tapocli import TapoCli
 
@@ -40,7 +54,7 @@ async def async_setup_entry(
     async_add_entities([sensor], update_before_add=True)
 
 
-class TapoP105Sensor(CoordinatorEntity, Entity):
+class TapoP105Sensor(CoordinatorEntity, BinarySensorEntity):
     """Representation of a Tapo P105 sensor."""
 
     def __init__(self, coordinator: P105Coordinator) -> None:
@@ -72,6 +86,16 @@ class TapoP105Sensor(CoordinatorEntity, Entity):
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
         return self._device_info
+
+    @property
+    def device_class(self) -> BinarySensorDeviceClass:
+        """Return the device class."""
+        return BinarySensorDeviceClass.PLUG
+
+    @property
+    def is_on(self) -> bool:
+        """Return the device is on or off."""
+        return self.coordinator.data[DEVICE_ON]
 
     @callback
     def _handle_coordinator_update(self) -> None:
