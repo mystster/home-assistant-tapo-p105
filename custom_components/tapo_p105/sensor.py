@@ -3,34 +3,21 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import timedelta
 import logging
 
-import voluptuous as vol
-
 from homeassistant import config_entries, core
-from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PASSWORD, CONF_USERNAME
-import homeassistant.helpers.config_validation as cv
+from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEVICE_NAME, DOMAIN, MODEL, SW_VERSION, UNIQUE_ID
+from .const import DEVICE_NAME, DOMAIN, HW_VERSION, MAC, MODEL, SW_VERSION, UNIQUE_ID
 from .coordinator import P105Coordinator
 from .tapocli import TapoCli
 
 _LOGGER = logging.getLogger(__name__)
-# Time between updating data from GitHub
-SCAN_INTERVAL = timedelta(minutes=10)
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_IP_ADDRESS): cv.string,
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-    }
-)
 
 
 async def async_setup_entry(
@@ -60,7 +47,21 @@ class TapoP105Sensor(CoordinatorEntity, Entity):
         """Init for the tapo P105 sensor."""
         super().__init__(coordinator)
         self.has_entity_name = True
-        self._attr_name = self._sensor_config.name.strip().title()
+        self._device_info = {
+            "identifiers": {(DOMAIN, self.coordinator.data[UNIQUE_ID])},
+            "name": self.coordinator.data[DEVICE_NAME],
+            "sw_version": self.coordinator.data[SW_VERSION],
+            "model": self.coordinator.data[MODEL],
+            "manufacturer": "TAPO",
+            "hw_version": self.coordinator.data[HW_VERSION],
+            "connections": {
+                (
+                    dr.CONNECTION_NETWORK_MAC,
+                    dr.format_mac(self.coordinator.data[MAC]),
+                )
+            },
+        }
+        self._attr_name = self.coordinator.data[DEVICE_NAME].strip().title()
 
     @property
     def unique_id(self) -> str | None:
@@ -70,10 +71,8 @@ class TapoP105Sensor(CoordinatorEntity, Entity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.coordinator.data[UNIQUE_ID])},
-            name=self.coordinator.data[DEVICE_NAME],
-            sw_version=self.coordinator.data[SW_VERSION],
-            model=self.coordinator.data[MODEL],
-            manufacturer="TAPO",
-        )
+        return self._device_info
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self.async_write_ha_state()
