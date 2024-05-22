@@ -48,7 +48,11 @@ class TapoCli:
 
     def info(self) -> any:
         """Get device info."""
-        res = self._exec_tapocli("info")
+        res = ""
+        exec_count = 0
+        while res == "" and exec_count < 5:
+            exec_count += 1
+            res = self._exec_tapocli("info")
         try:
             j = json.loads(res)
         except json.JSONDecodeError as j:
