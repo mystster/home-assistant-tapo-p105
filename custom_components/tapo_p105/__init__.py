@@ -21,6 +21,9 @@ async def async_setup_entry(
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, Platform.BINARY_SENSOR)
     )
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, Platform.SWITCH)
+    )
     return True
 
 

@@ -23,8 +23,8 @@ class P105Coordinator(DataUpdateCoordinator):
             # Polling interval. Will only be polled if there are subscribers.
             update_interval=timedelta(minutes=2),
         )
-        self._cli = cli
+        self.cli = cli
 
     async def _async_update_data(self):
         """Fetch data from API endpoint."""
-        return self._cli.info()
+        return self.cli.info()
