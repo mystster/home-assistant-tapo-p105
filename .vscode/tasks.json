@@ -6,12 +6,6 @@
       "type": "shell",
       "command": ".devcontainer/start.sh run",
       "problemMatcher": []
-    },
-    {
-      "label": "Install a specific version of Home Assistant",
-      "type": "shell",
-      "command": ".devcontainer/start.sh setversion",
-      "problemMatcher": []
     }
   ]
 }
