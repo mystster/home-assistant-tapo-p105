@@ -4,7 +4,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "name": "tapo integration development",
+  "name": "integration development",
   "appPort": ["9123:8123"],
   "containerUser": "root",
   "postCreateCommand": "pip install -r requirements_dev.txt",
