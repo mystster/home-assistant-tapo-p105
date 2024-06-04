@@ -12,6 +12,7 @@
       }
     },
     "error": {
+      "tapo2_error": "tapo2 binary file not found",
       "connect_error": "Cannot connect to the device",
       "ip_error": "IP address is not correct",
       "response_error": "decode error from json which response from the device",

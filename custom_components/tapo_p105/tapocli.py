@@ -3,6 +3,7 @@
 import json
 import logging
 from pathlib import Path
+import platform
 import subprocess
 
 from homeassistant import exceptions
@@ -17,9 +18,24 @@ class TapoCli:
 
     def __init__(self, config_path: str, ip: str, username: str, password: str) -> None:
         """Initialize for wrapper."""
-        self._tapocli = str(
-            Path(config_path) / "custom_components" / DOMAIN / "bin" / "tapo2"
+        machine = (
+            "x86_64"
+            if platform.machine().lower() in ("i386", "amd64", "x86_64")
+            else platform.machine().lower()
         )
+        clipath = (
+            Path(config_path)
+            / "custom_components"
+            / DOMAIN
+            / "bin"
+            / platform.system().lower()
+            / machine
+            / "tapo2"
+        )
+        _LOGGER.info(str(clipath))
+        if not clipath.exists():
+            raise Tapo2FileNotFoundError
+        self._tapocli = str(clipath)
         self._ip = ip
         self._username = username
         self._password = password
@@ -68,10 +84,14 @@ class TapoCli:
         """Device off."""
         self._exec_tapocli("off")
 
-    def isOn(self) -> bool:
+    def is_on(self) -> bool:
         """Is device is on."""
-        res = self.info
+        res = self.info()
         return res["device_on"]
+
+
+class Tapo2FileNotFoundError(exceptions.HomeAssistantError):
+    """Error to indicate tapo2 binary file not found."""
 
 
 class CannotConnectError(exceptions.HomeAssistantError):
