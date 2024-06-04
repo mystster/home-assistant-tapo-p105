@@ -22,7 +22,10 @@ elif [[ "$action" == "run" ]]; then
         echo "Copy configuration.yaml"
         ln -sf "$(workspacePath).devcontainer/configuration.yaml" /tmp/config/configuration.yaml || echo ".devcontainer/configuration.yaml is missing"
     fi
-
+    if test -f ".devcontainer/home-assistant_v2.db"; then
+        echo "Copy home-assistant_v2.db"
+        ln -sf "$(workspacePath).devcontainer/home-assistant_v2.db" /tmp/config/home-assistant_v2.db || echo ".devcontainer/home-assistant_v2.db is missing"
+    fi
     if test -d "custom_components"; then
         echo "Symlink the custom component directory"
 
